@@ -1,20 +1,21 @@
-import user from "../models/user";
+import user from "../models/user.js";
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 import dotenv from 'dotenv'
 
 dotenv.config()
+const secret_key=process.env.jwt_key
 
 // Register ==>
 export const register = async (req, res) => {
     const { username, email, password } = req.body;
+    const existingEmail = await user.findOne({ email })
     try {
-        const existingEmail = await user.findOne({ email })
         if (existingEmail) {
             res.status(403).json({ message: "User already exists." })
             console.log(existingEmail)
         }
-        const hasspaasword = bcrypt.hash(password, 10)
+        const hasspaasword =await bcrypt.hash(password, 10)
         const newUser = new user({
             username,
             email,
@@ -33,19 +34,19 @@ export const register = async (req, res) => {
 // Login ==>
 export const login = async (req, res) => {
     const { email, password } = req.body
-    const existingUser = await user.findOne({ email }),
+    const existingUser = await user.findOne({ email })
     try {
         if (!existingUser) {
             res.status(403).json({ message: "User does not exist." })
         }
-        const compPassword = bcrypt.compare(password, existingUser.password)
+        const compPassword = await bcrypt.compare(password, existingUser.password)
         if (!compPassword) {
             res.status(403).json({ message: "Incorrect password." })
         }
         const token = jwt.sign({
             email: existingUser.email,
             role: existingUser.role
-        }, jwt_key, { expiresIn: '1h' })
+        }, secret_key, { expiresIn: '1h' })
         res.status(200).json({ token })
     }
     catch (e) {

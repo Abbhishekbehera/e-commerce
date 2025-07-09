@@ -2,8 +2,9 @@
 import express from 'express'
 import dotenv from 'dotenv'
 import connectDb from './config/db.js'
-
-//  Variable ==>
+import authRouter from './routes/authroutes.js'
+import { authMiddleware } from './middlewares/authMiddleware.js'
+// Environmental Variable ==>
 dotenv.config()
 
 // Database connection ==>
@@ -16,11 +17,10 @@ const app = express();
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
+// Routes
+app.use('/api',authRouter)
 
 
-app.get('/', (req, res) => {
-    res.status(200).json({ message: "Server is running !" })
-})
 
 // Server Listening ==>
 app.listen(process.env.PORT, () => {

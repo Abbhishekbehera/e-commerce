@@ -21,10 +21,10 @@ const productSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
-    reviews: {
+    reviews: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'review'
-    }
+    }]
 })
 
 const product = new mongoose.model('product', productSchema)
