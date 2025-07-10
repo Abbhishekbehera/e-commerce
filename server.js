@@ -3,7 +3,8 @@ import express from 'express'
 import dotenv from 'dotenv'
 import connectDb from './config/db.js'
 import authRouter from './routes/authroutes.js'
-import { authMiddleware } from './middlewares/authMiddleware.js'
+import upload from './middlewares/upload.js'
+
 // Environmental Variable ==>
 dotenv.config()
 
@@ -16,9 +17,10 @@ const app = express();
 // Middleware ==>
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
+app.use('uploads/',express.static('uploads'))
 
 // Routes
-app.use('/api',authRouter)
+app.use('/api/auth',authRouter)
 
 
 
