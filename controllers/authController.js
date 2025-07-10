@@ -8,7 +8,7 @@ const secret_key=process.env.jwt_key
 
 //Register ==>
 export const register = async (req, res) => {
-    const { username, email, password } = req.body;
+    const { username, email, password,role } = req.body;
     const existingEmail = await user.findOne({ email })
     try {
         if (existingEmail) {
@@ -19,7 +19,8 @@ export const register = async (req, res) => {
         const newUser = new user({
             username,
             email,
-            password: hasspaasword
+            password: hasspaasword,
+            role
         })
         await newUser.save()
         console.log(newUser)

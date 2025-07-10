@@ -4,6 +4,7 @@ import dotenv from 'dotenv'
 import connectDb from './config/db.js'
 import authRouter from './routes/authroutes.js'
 import upload from './middlewares/upload.js'
+import sellerRouter from './routes/sellerRoutes.js'
 
 //Environmental Variable ==>
 dotenv.config()
@@ -21,7 +22,7 @@ app.use('uploads/',express.static('uploads'))
 
 //Routes
 app.use('/api/auth',authRouter)
-
+app.use('/seller',sellerRouter)
 
 
 //Server Listening ==>

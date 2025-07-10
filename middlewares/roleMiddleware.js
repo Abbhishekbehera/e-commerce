@@ -11,3 +11,4 @@ const authorizeRole = (...allowRole) => {
         }
     }
 }
+export default authorizeRole
