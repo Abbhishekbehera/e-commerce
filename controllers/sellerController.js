@@ -1,6 +1,6 @@
 import product from "../models/product";
 
-// Create Product ==>
+//Create Product ==>
 export const createProduct = async (req, res) => {
     try {
         const { productName, description, price, category } = req.body
@@ -21,7 +21,7 @@ export const createProduct = async (req, res) => {
     }
 }
 
-// Update Product ==>
+//Update Product ==>
 export const updateProduct = async (req, res) => {
     const productId = req.params.id
     const sellerId = req.params._id
@@ -55,13 +55,13 @@ export const deleteProduct = async (req, res) => {
         seller: sellerId
     })
     try {
-        if(!product){
-            return res.status(404).json({message:'Product not found.'})
+        if (!product) {
+            return res.status(404).json({ message: 'Product not found.' })
         }
-        res.status(202).json({message:'Successfully deleted product ',data:product})    
+        res.status(202).json({ message: 'Successfully deleted product ', data: product })
     }
-    catch(e){
+    catch (e) {
         console.log(e)
-        res.status(502).json({message:'Server Error in deleting the product.'})
+        res.status(502).json({ message: 'Server Error in deleting the product.' })
     }
 }

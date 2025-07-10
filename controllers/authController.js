@@ -6,7 +6,7 @@ import dotenv from 'dotenv'
 dotenv.config()
 const secret_key=process.env.jwt_key
 
-// Register ==>
+//Register ==>
 export const register = async (req, res) => {
     const { username, email, password } = req.body;
     const existingEmail = await user.findOne({ email })
@@ -31,7 +31,7 @@ export const register = async (req, res) => {
     }
 }
 
-// Login ==>
+//Login ==>
 export const login = async (req, res) => {
     const { email, password } = req.body
     const existingUser = await user.findOne({ email })
