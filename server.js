@@ -3,7 +3,7 @@ import express from 'express'
 import dotenv from 'dotenv'
 import connectDb from './config/db.js'
 import authRouter from './routes/authroutes.js'
-import upload from './middlewares/upload.js'
+import adminRouter from './routes/adminRoutes.js'
 import sellerRouter from './routes/sellerRoutes.js'
 
 //Environmental Variable ==>
@@ -20,9 +20,12 @@ app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 app.use('uploads/',express.static('uploads'))
 
-//Routes
+//Authentication Routes
 app.use('/api/auth',authRouter)
-app.use('/seller',sellerRouter)
+//Seller Routes
+app.use('/api/seller',sellerRouter)
+//Admin Routes
+app.use('/api/admin',adminRouter)
 
 
 //Server Listening ==>

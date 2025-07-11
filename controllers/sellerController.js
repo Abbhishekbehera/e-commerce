@@ -1,6 +1,6 @@
 import product from "../models/product.js";
 import order from "../models/order.js";
-import user from "../models/user.js";
+
 //Dashboard of Seller
 export const sellerDashboard = async (req, res) => {
     const sellerId = req.params._id
