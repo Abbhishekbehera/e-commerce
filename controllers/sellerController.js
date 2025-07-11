@@ -30,7 +30,7 @@ export const sellerDashboard = async (req, res) => {
             { $sort: { totalSold: -1 } },
             { $limit: 5 }
 
-        ]),
+        ])
         const topCategories = await product.aggregate([
             { $match: { seller: sellerId } },
             { $group: { _id: '$category', count: { $sum: 1 } } },
