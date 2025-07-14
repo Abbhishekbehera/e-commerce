@@ -1,7 +1,11 @@
 import { getFeaturedProducts, searchProducts, getProductDetails, addToCart, getCart, removeFromCart, placeOrder, getOrderHistory } from "../controllers/customerController.js";
 import express from 'express'
+import {authorizeRole} from "../middlewares/roleMiddleware.js";
+
 
 const cusRouter = express.Router()
+
+cusRouter.use(authorizeRole('customer'))
 
 cusRouter.get('/products/featured', getFeaturedProducts);
 cusRouter.get('/products/search', searchProducts);
