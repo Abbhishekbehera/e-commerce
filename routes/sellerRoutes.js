@@ -24,5 +24,4 @@ sellerRouter.get('/orders/delivered',getDeliveredOrders)
 sellerRouter.get('/dashboard',sellerDashboard)
 
 
-
 export default sellerRouter
