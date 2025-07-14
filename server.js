@@ -5,6 +5,7 @@ import connectDb from './config/db.js'
 import authRouter from './routes/authroutes.js'
 import adminRouter from './routes/adminRoutes.js'
 import sellerRouter from './routes/sellerRoutes.js'
+import cusRouter from './routes/cusRoutes.js'
 
 //Environmental Variable ==>
 dotenv.config()
@@ -26,6 +27,8 @@ app.use('/api/auth',authRouter)
 app.use('/api/seller',sellerRouter)
 //Admin Routes
 app.use('/api/admin',adminRouter)
+// Customer Routes
+app.use('/api',cusRouter)
 
 
 //Server Listening ==>
