@@ -1,8 +1,9 @@
 const authorizeRole = (...allowRole) => {
     return (req, res, next) => {
         try {
+        
             if (!req.user || !allowRole.includes(req.user.role)) {
-                res.status(403).json({ message: "Invalid Authorization role." })
+                return res.status(403).json({ message: "Invalid Authorization role." })
             }
             next()
         } catch (e) {

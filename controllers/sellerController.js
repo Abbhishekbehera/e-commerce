@@ -54,7 +54,9 @@ export const sellerDashboard = async (req, res) => {
 //Create Product ==>
 export const createProduct = async (req, res) => {
     try {
+        console.log(req.body)
         const { productName, description, price, category } = req.body
+        console.log('new')
         const imagePath = req.file ? req.file.path : null
         const newProduct = new product({
             productName,
@@ -74,28 +76,41 @@ export const createProduct = async (req, res) => {
 
 //Update Product ==>
 export const updateProduct = async (req, res) => {
-    const productId = req.params.id
-    const sellerId = req.params._id
-    const { productName, description, price, category } = req.body
     try {
-        const existingProduct = await product.findOne({
-            _id: productId,
-            seller: sellerId
-        })
-        if (!existingProduct) {
-            res.status(404).json({ message: 'This product does not exist.' })
-        }
-        product.name = productName || product.name;
-        product.description = description || product.description;
-        product.category = category || product.category;
-        product.price = price || product.price;
+        const { productId } = req.params; 
+        const { productName, description, category, price } = req.body;
 
-        const updatedProduct = await product.save()
-        res.status(202).json({ message: 'Successfully product updated.', data: updatedProduct })
+        const existingProduct = await product.findOne({ productId });
+       
+
+        if (!existingProduct) {
+            return res.status(404).json({ message: 'This product does not exist.' });
+        }
+        console.log('1')
+
+        existingProduct.productName = productName || existingProduct.productName;
+        existingProduct.description = description || existingProduct.description;
+        existingProduct.category = category || existingProduct.category;
+        existingProduct.price = price || existingProduct.price;
+        console.log('2')
+
+        const updatedProduct = await existingProduct.save();
+        console.log('3')
+
+        return res.status(200).json({
+            message: 'Product updated successfully.',
+            product: updatedProduct
+        });
+        
     } catch (e) {
-        res.status(500).json({ message: 'Server Error in updating the product.' })
+        console.log('Update Error:', e)
+        console.error('Update Error:', e);
+        if (res.headersSent) return;
+        return res.status(500).json({ message: 'Server error while updating product.' });
     }
-}
+};
+
+
 
 //Delete Product ==>
 export const deleteProduct = async (req, res) => {

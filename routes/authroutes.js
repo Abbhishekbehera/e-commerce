@@ -5,10 +5,10 @@ import rateLimiter from '../middlewares/rateLimitMiddleware.js'
 const authRouter=express.Router()
 
 //Login ==>
-authRouter.post('/login',rateLimiter,login)
+authRouter.post('/login',rateLimiter,login) //Working...
 
 //Register ==>
-authRouter.post('/register',register)
+authRouter.post('/register',register) //Working...
 
 
 export default authRouter

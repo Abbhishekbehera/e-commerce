@@ -1,20 +1,24 @@
 import jwt from 'jsonwebtoken'
-import dotenv from 'dotenv'
 
-dotenv.config()
 const secret_key = process.env.jwt_key
 
-export const authMiddleware = async (req, res, next) => {
-    const token = req.headers.authorization?.split(" ")[1]
+const authMiddleware = async (req, res, next) => {
+    const token = req.headers.authorization?.split(" ")[1];
+
     if (!token) {
-        res.status(403).json({ message: 'Access Denied.' })
+        return res.status(403).json({ message: 'Access Denied. No token provided.' });
     }
+
     try {
-        const existingUser = jwt.verify(token, secret_key)
-        req.user = existingUser
-        next()
-    }
-    catch (e) {
-        res.status(500).json({ message: 'Server down.' })
+        console.log('1');
+        const existingUser = jwt.verify(token, secret_key);
+        req.user = existingUser;
+        console.log('Decoded User:', req.user);
+        next();
+    } catch (e) {
+        console.error('JWT Error:', e);
+        return res.status(401).json({ message: 'Invalid or expired token.', error: e.message });
     }
 }
+
+export default authMiddleware;

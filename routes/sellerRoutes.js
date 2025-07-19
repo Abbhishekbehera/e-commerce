@@ -2,18 +2,19 @@ import { sellerDashboard,createProduct, updateProduct, deleteProduct,getOrders,g
 import productLimit from "../middlewares/productLimit.js";
 import express from 'express'
 import authorizeRole from "../middlewares/roleMiddleware.js";
-
+import authMiddleware from "../middlewares/authMiddleware.js"
+import multer from 'multer';
+const upload = multer(); 
 
 
 const sellerRouter=express.Router()
 
 //Authorization
-sellerRouter.use(authorizeRole('Seller'))
 
 //Product Routes
-sellerRouter.post('/products',productLimit,createProduct)
-sellerRouter.put('/products/:id',updateProduct)
-sellerRouter.delete('/products/:id',deleteProduct)
+sellerRouter.post('/products',authMiddleware,authorizeRole('seller'),productLimit,upload.none(),createProduct)
+sellerRouter.put('/products/:id',authMiddleware,updateProduct)
+sellerRouter.delete('/products/:id',authMiddleware,deleteProduct)
 
 //Order Routes
 sellerRouter.get('/orders/received',getOrders)
@@ -21,7 +22,7 @@ sellerRouter.get('/orders/pending',getPendingOrders)
 sellerRouter.get('/orders/delivered',getDeliveredOrders)
 
 //Dashboard Seller
-sellerRouter.get('/dashboard',sellerDashboard)
+sellerRouter.get('/dashboard',authMiddleware,sellerDashboard)
 
 
 export default sellerRouter

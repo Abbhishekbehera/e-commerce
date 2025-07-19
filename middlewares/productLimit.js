@@ -11,6 +11,7 @@ const productLimit = async (req, res, next) => {
         if (productCount >= 5) {
             return res.status(403).json({ message: 'Product post limit is reached.' })
         }
+        console.log('passed')
         next()
     } catch (e) {
         return res.status(500).json({ message: 'Server is down.Please Wait.' })
