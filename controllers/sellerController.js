@@ -1,16 +1,62 @@
 import product from "../models/product.js";
 import order from "../models/order.js";
+import mongoose from "mongoose";
+
 
 //Dashboard of Seller
 export const sellerDashboard = async (req, res) => {
-    const sellerId = req.params._id
+    const sellerId = req.user.id
     try {
-        const totalProducts = await product.countDocuments({ seller: sellerId }) //Counts all products of a seller
-        const totalOrders = await order.countDocuments({ seller: sellerId }) //Counts all orders from the seller by _id
-        const pendingOrders = await order.countDocuments({ seller: sellerId, status: 'pending' }) //Status of the order 
+        const sellerObjectId = new mongoose.Types.ObjectId(sellerId);
+        const totalProducts = await product.countDocuments({ seller: sellerId });//Counts all products of a seller
+        const totalOrders = await order.aggregate([
+            { $unwind: '$orderItems' },
+            {
+                $lookup: {
+                    from: 'products',
+                    localField: 'orderItems.product',
+                    foreignField: '_id',
+                    as: 'productDetails'
+                }
+            },
+            { $unwind: '$productDetails' },
+            { $match: { 'productDetails.seller': new mongoose.Types.ObjectId(req.user.id) } },
+            {
+                $group: {
+                    _id: '$_id'
+                }
+            },
+            {
+                $count: 'totalOrders'
+            }
+        ]);
+
+
+        console.log(totalOrders)
+
+        const pendingOrders = await order.aggregate([
+            { $match: { status: 'pending' } },
+            { $unwind: '$orderItems' },
+            {
+                $lookup: {
+                    from: 'products',
+                    localField: 'orderItems.product',
+                    foreignField: '_id',
+                    as: 'productDetails'
+                }
+            },
+            { $unwind: '$productDetails' },
+            { $match: { 'productDetails.seller': new mongoose.Types.ObjectId(sellerId) } },
+            { $group: { _id: '$_id' } }, 
+            { $count: 'pendingOrders' } 
+        ]);
+
+        
+
+        console.log(pendingOrders)
         //Top products
         const topProducts = await order.aggregate([
-            { $match: { seller: sellerId } },
+            { $match: { seller: new mongoose.Types.ObjectId(sellerId) } },
             { $unwind: '$orderItems' },
             {
                 $group: {
@@ -30,13 +76,15 @@ export const sellerDashboard = async (req, res) => {
             { $sort: { totalSold: -1 } },
             { $limit: 5 }
 
-        ])  
+        ])
+        console.log(topProducts)
         const topCategories = await product.aggregate([
-            { $match: { seller: sellerId } },
-            { $group: { _id: '$category', count: { $sum: 1 } } },
+            { $match: { seller: new mongoose.Types.ObjectId(sellerId) } },
+            { $group: { _id: '$category' } },
             { $sort: { count: -1 } },
             { $limit: 3 }
         ]);
+        console.log(topCategories)
 
         res.status(200).json({
             totalProducts,
@@ -54,7 +102,9 @@ export const sellerDashboard = async (req, res) => {
 //Create Product ==>
 export const createProduct = async (req, res) => {
     try {
-        console.log(req.body)
+
+        const sellerId = req.user.id
+        console.log(req.user)
         const { productName, description, price, category } = req.body
         console.log('new')
         const imagePath = req.file ? req.file.path : null
@@ -62,8 +112,10 @@ export const createProduct = async (req, res) => {
             productName,
             description,
             price,
+            seller: sellerId,
             category,
-            image: imagePath
+            image: imagePath,
+
         })
         await newProduct.save()
         res.status(201).json({ message: 'Successfully product created.' })
@@ -77,11 +129,11 @@ export const createProduct = async (req, res) => {
 //Update Product ==>
 export const updateProduct = async (req, res) => {
     try {
-        const { productId } = req.params; 
+        const { productId } = req.params;
         const { productName, description, category, price } = req.body;
 
         const existingProduct = await product.findOne({ productId });
-       
+
 
         if (!existingProduct) {
             return res.status(404).json({ message: 'This product does not exist.' });
@@ -101,7 +153,7 @@ export const updateProduct = async (req, res) => {
             message: 'Product updated successfully.',
             product: updatedProduct
         });
-        
+
     } catch (e) {
         console.log('Update Error:', e)
         console.error('Update Error:', e);
@@ -115,7 +167,7 @@ export const updateProduct = async (req, res) => {
 //Delete Product ==>
 export const deleteProduct = async (req, res) => {
     const productId = req.params.id
-    const sellerId = req.params._id
+    const sellerId = req.user.id
     await product.findOneAndDelete({
         _id: productId,
         seller: sellerId
@@ -135,7 +187,8 @@ export const deleteProduct = async (req, res) => {
 //Get orders ==>
 export const getOrders = async (req, res) => {
     try {
-        const orders = await order.find({ seller: req.user._id })
+        sellerid = req.user.id;
+        const orders = await order.find({ seller: sellerId })
             .populate('customer', 'username')
             .populate('orderItems.product', 'name')
         res.status(200).json({ orders })
@@ -146,23 +199,23 @@ export const getOrders = async (req, res) => {
     }
 }
 //Get pending orders ==>
-export const getPendingOrders=async(req,res)=>{
-    try{
-        const orders=await order.find({seller:req.user._id,status:'pending'})
-        res.status(200).json({orders})
+export const getPendingOrders = async (req, res) => {
+    try {
+        const orders = await order.find({ seller: req.user._id, status: 'pending' })
+        res.status(200).json({ orders })
     }
-    catch(e){
-        return res.status(500).json({message:'Pending order fetch error.'})
+    catch (e) {
+        return res.status(500).json({ message: 'Pending order fetch error.' })
     }
 }
 //Get Delivered orders ==>
-export const getDeliveredOrders=async(req,res)=>{
-    try{
-        const orders=await order.find({seller:req.user._id,status:'delivered'})
-        res.status(200).json({orders})
+export const getDeliveredOrders = async (req, res) => {
+    try {
+        const orders = await order.find({ seller: req.user._id, status: 'delivered' })
+        res.status(200).json({ orders })
     }
-    catch(e){
+    catch (e) {
         console.log(e)
-        return res.status(500).json({message:'Delivered order fetch error.'})
+        return res.status(500).json({ message: 'Delivered order fetch error.' })
     }
 }    
