@@ -5,99 +5,116 @@ import mongoose from "mongoose";
 
 //Dashboard of Seller
 export const sellerDashboard = async (req, res) => {
-    const sellerId = req.user.id
-    try {
-        const sellerObjectId = new mongoose.Types.ObjectId(sellerId);
-        const totalProducts = await product.countDocuments({ seller: sellerId });//Counts all products of a seller
-        const totalOrders = await order.aggregate([
-            { $unwind: '$orderItems' },
-            {
-                $lookup: {
-                    from: 'products',
-                    localField: 'orderItems.product',
-                    foreignField: '_id',
-                    as: 'productDetails'
-                }
-            },
-            { $unwind: '$productDetails' },
-            { $match: { 'productDetails.seller': new mongoose.Types.ObjectId(req.user.id) } },
-            {
-                $group: {
-                    _id: '$_id'
-                }
-            },
-            {
-                $count: 'totalOrders'
-            }
-        ]);
+  const sellerId = req.user.id;
 
+  try {
+    const sellerObjectId = new mongoose.Types.ObjectId(sellerId);
 
-        console.log(totalOrders)
+    // Total Products
+    const totalProducts = await product.countDocuments({ seller: sellerObjectId });
 
-        const pendingOrders = await order.aggregate([
-            { $match: { status: 'pending' } },
-            { $unwind: '$orderItems' },
-            {
-                $lookup: {
-                    from: 'products',
-                    localField: 'orderItems.product',
-                    foreignField: '_id',
-                    as: 'productDetails'
-                }
-            },
-            { $unwind: '$productDetails' },
-            { $match: { 'productDetails.seller': new mongoose.Types.ObjectId(sellerId) } },
-            { $group: { _id: '$_id' } }, 
-            { $count: 'pendingOrders' } 
-        ]);
+    // Total Orders for Seller
+    const totalOrdersAgg = await order.aggregate([
+      { $unwind: "$orderItems" },
+      {
+        $lookup: {
+          from: "products",
+          localField: "orderItems.product",
+          foreignField: "_id",
+          as: "productDetails"
+        }
+      },
+      { $unwind: "$productDetails" },
+      { $match: { "productDetails.seller": sellerObjectId } },
+      { $group: { _id: "$_id" } },
+      { $count: "totalOrders" }
+    ]);
+    const totalOrders = totalOrdersAgg.length > 0 ? totalOrdersAgg[0].totalOrders : 0;
 
-        
+    // Pending Orders
+    const pendingOrdersAgg = await order.aggregate([
+      { $match: { status: "pending" } },
+      { $unwind: "$orderItems" },
+      {
+        $lookup: {
+          from: "products",
+          localField: "orderItems.product",
+          foreignField: "_id",
+          as: "productDetails"
+        }
+      },
+      { $unwind: "$productDetails" },
+      { $match: { "productDetails.seller": sellerObjectId } },
+      { $group: { _id: "$_id" } },
+      { $count: "pendingOrders" }
+    ]);
+    const pendingOrders = pendingOrdersAgg.length > 0 ? pendingOrdersAgg[0].pendingOrders : 0;
 
-        console.log(pendingOrders)
-        //Top products
-        const topProducts = await order.aggregate([
-            { $match: { seller: new mongoose.Types.ObjectId(sellerId) } },
-            { $unwind: '$orderItems' },
-            {
-                $group: {
-                    _id: '$orderItems.product',
-                    totalSold: { $sum: 'orderItems.quantity' }
-                }
-            },
-            {
-                $lookup: {
-                    from: 'products',
-                    localField: '_id',
-                    foreignField: '_id',
-                    as: 'productDetails'
-                }
-            },
-            { $unwind: '$productDetails' },
-            { $sort: { totalSold: -1 } },
-            { $limit: 5 }
+    // Top 5 Products by Quantity Sold
+    const topProducts = await order.aggregate([
+      { $unwind: "$orderItems" },
+      {
+        $lookup: {
+          from: "products",
+          localField: "orderItems.product",
+          foreignField: "_id",
+          as: "productDetails"
+        }
+      },
+      { $unwind: "$productDetails" },
+      { $match: { "productDetails.seller": sellerObjectId } },
+      {
+        $group: {
+          _id: "$orderItems.product",
+          totalSold: { $sum: "$orderItems.quantity" }
+        }
+      },
+      {
+        $lookup: {
+          from: "products",
+          localField: "_id",
+          foreignField: "_id",
+          as: "productDetails"
+        }
+      },
+      { $unwind: "$productDetails" },
+      {
+        $project: {
+          _id: 0,
+          productId: "$productDetails._id",
+          name: "$productDetails.productName",
+          totalSold: 1
+        }
+      },
+      { $sort: { totalSold: -1 } },
+      { $limit: 5 }
+    ]);
 
-        ])
-        console.log(topProducts)
-        const topCategories = await product.aggregate([
-            { $match: { seller: new mongoose.Types.ObjectId(sellerId) } },
-            { $group: { _id: '$category' } },
-            { $sort: { count: -1 } },
-            { $limit: 3 }
-        ]);
-        console.log(topCategories)
+    // Top 3 Categories by Count
+    const topCategories = await product.aggregate([
+      { $match: { seller: sellerObjectId } },
+      {
+        $group: {
+          _id: "$category",
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { count: -1 } },
+      { $limit: 3 }
+    ]);
 
-        res.status(200).json({
-            totalProducts,
-            totalOrders,
-            pendingOrders,
-            topProducts,
-            topCategories
-        });
-    }
-    catch (e) {
-        return res.status(500).json({ message: "Dashboard Server is down." })
-    }
-}
+    return res.status(200).json({
+      totalProducts,
+      totalOrders,
+      pendingOrders,
+      topProducts,
+      topCategories
+    });
+  } catch (e) {
+    console.error("Dashboard Error:", e);
+    return res.status(500).json({ message: "Dashboard server is down." });
+  }
+};
 
 //Create Product ==>
 export const createProduct = async (req, res) => {
@@ -187,10 +204,11 @@ export const deleteProduct = async (req, res) => {
 //Get orders ==>
 export const getOrders = async (req, res) => {
     try {
-        sellerid = req.user.id;
+        const sellerId = req.user.id;
         const orders = await order.find({ seller: sellerId })
             .populate('customer', 'username')
-            .populate('orderItems.product', 'name')
+            .populate('orderItems.product', 'name description price')
+            console.log(sellerId)
         res.status(200).json({ orders })
     }
     catch (e) {
@@ -201,8 +219,9 @@ export const getOrders = async (req, res) => {
 //Get pending orders ==>
 export const getPendingOrders = async (req, res) => {
     try {
-        const orders = await order.find({ seller: req.user._id, status: 'pending' })
+        const orders = await order.find({ seller: req.user.id, status: 'pending' })
         res.status(200).json({ orders })
+        console.log(orders)
     }
     catch (e) {
         return res.status(500).json({ message: 'Pending order fetch error.' })
@@ -211,7 +230,7 @@ export const getPendingOrders = async (req, res) => {
 //Get Delivered orders ==>
 export const getDeliveredOrders = async (req, res) => {
     try {
-        const orders = await order.find({ seller: req.user._id, status: 'delivered' })
+        const orders = await order.find({ seller: req.user.id, status: 'delivered' })
         res.status(200).json({ orders })
     }
     catch (e) {

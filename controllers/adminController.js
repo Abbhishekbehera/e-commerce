@@ -1,5 +1,6 @@
 import product from "../models/product.js";
 import order from "../models/order.js";
+import user from "../models/user.js";
 
 
 //Admin Dashboard
@@ -49,6 +50,7 @@ export const adminDashboard = async (req, res) => {
             topCategories,
             topSellers
         });
+        console.log(topCategories,totalOrders,pendingOrders,topProducts,topSellers)
     } catch (err) {
         res.status(500).json({ message: 'Failed to fetch dashboard data', error: err.message });
     }
@@ -57,14 +59,17 @@ export const adminDashboard = async (req, res) => {
 export const viewOrders = async (req, res) => {
     try {
         const orders = await order.find()
-            .populate('user', 'username')
-        res.status(200).json({ orders })
+            .populate('customer', 'username email')         // Get customer info
+            .populate('seller', 'username email')           // Get seller info
+            .populate('orderItems.product', 'name price image'); // Get product info
+        console.log(orders)
+        res.status(200).json({ orders });
+    } catch (e) {
+        console.error("Error fetching all orders:", e);
+        return res.status(500).json({ message: 'Error in the server side.' });
     }
-    catch (e) {
-        console.log(e)
-        return res.status(500).json({ message: 'Error in the server side.' })
-    }
-}
+};
+
 //Blacklist Products
 export const blacklistProducts = async (req, res) => {
     try {

@@ -17,9 +17,9 @@ sellerRouter.put('/products/:id',authMiddleware,updateProduct)
 sellerRouter.delete('/products/:id',authMiddleware,deleteProduct)
 
 //Order Routes
-sellerRouter.get('/orders/received',getOrders)
-sellerRouter.get('/orders/pending',getPendingOrders)
-sellerRouter.get('/orders/delivered',getDeliveredOrders)
+sellerRouter.get('/orders/received',authMiddleware,getOrders)
+sellerRouter.get('/orders/pending',authMiddleware,getPendingOrders)
+sellerRouter.get('/orders/delivered',authMiddleware,getDeliveredOrders)
 
 //Dashboard Seller
 sellerRouter.get('/dashboard',authMiddleware,sellerDashboard)
