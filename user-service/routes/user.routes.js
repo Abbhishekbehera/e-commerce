@@ -1,6 +1,13 @@
 import { Router } from "express";
-
+import {loginUser, 
+        registerUser,
+        updateUserProfile,
+        getUserProfile} 
+        from "../controllers/user.controller.js"
+import verifyJWT from "../middleware/verifyToken.js"
 const userRouter = Router()
 
-userRouter.route("/user/login").post()
-userRouter.route("/user/register").post()
+userRouter.route("/user/login").post(loginUser)
+userRouter.route("/user/register").post(registerUser)
+userRouter.route("/user/profile").put(verifyJWT, updateUserProfile).get(verifyJWT, getUserProfile)
+export default userRouter;

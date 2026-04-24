@@ -1,6 +1,7 @@
 import express from "express";
 import connectDb from "../user-service/config/db.js";
 import dotenv from "dotenv";
+import userRoutes from "./routes/user.routes.js";
 
 dotenv.config(
     {
@@ -23,3 +24,6 @@ connectDb()
     .catch((error) => {
         console.error("Failed to connect to the database -> User Service", error);
     });
+
+
+app.use("/api/v1/", userRoutes);
