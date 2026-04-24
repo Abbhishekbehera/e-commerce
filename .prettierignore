@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# Coverage reports
+coverage/
+
+# Logs
+*.log
+
+# Minified files
+*.min.js
+*.min.css
+
+# Lock files
+package-lock.json
+yarn.lock
+
+# Environment files
+.env
+.env.local
+.env.production
