@@ -17,6 +17,7 @@ const userSchema = new mongoose.Schema({
     password: {
         type: String,
         required: true,
+        select: false,
         trim: true,
         minlength: [6, "Password must be at least 6 characters long"]
     },
@@ -34,8 +35,8 @@ userSchema.pre("save", async function () {
 })
 
 userSchema.methods.isPasswordCorrect = async function (password) {
-    return argon2.verify(password, this.password)
-}
+    return await argon2.verify(this.password, password);
+};
 
 const User = mongoose.model("User", userSchema)
 

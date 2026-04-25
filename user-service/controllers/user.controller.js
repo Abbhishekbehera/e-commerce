@@ -9,7 +9,8 @@ import { generateToken } from "../utils/generatejwt.js"
 
 //Register Controller
 const registerUser = asyncHandler(async (req, res) => {
-    try {
+    console.log("Request Body:", req.body);
+    console.log("Request Files:", req.files);
         const { name, email, password } = req.body
         if ([name, email, password].some((f) => {
             return f?.trim() === ""
@@ -20,8 +21,12 @@ const registerUser = asyncHandler(async (req, res) => {
         if (existingUser) {
             throw new apiError("User already exists.Please login!", 409)
         }
-        const profilePicImage = req.files?.profilePic[0]?.path
-        const profile = await uploadImageToCloudinary(profilePicImage)
+        const profilePicImage = req.files?.profilePic?.[0]?.path
+        let profile = { url: "" };
+
+        if (profilePicImage) {
+        profile = await uploadImageToCloudinary(profilePicImage);
+        }
         const newUser = await User.create({
             name,
             email,
@@ -32,20 +37,16 @@ const registerUser = asyncHandler(async (req, res) => {
         return res.status(200).json(new apiResponse("User created successfully.", 200,
             { user: newUser, token }))
     }
-    catch (error) {
-        return res.status(500).json(new apiError("Server Error.Please wait!", 500))
-    }
 
-})
+)
 
 //Login Controller
 const loginUser = asyncHandler(async (req, res) => {
-    try {
         const { email, password } = req.body
         if ([email, password].some((f) => f?.trim() === "")) {
             throw new apiError("Email and password are required", 400)
         }
-        const user = await User.findOne({ email })
+        const user = await User.findOne({ email }).select("+password");
         if (!user) {
             throw new apiError("User not found. Please register!", 404)
         }
@@ -62,10 +63,6 @@ const loginUser = asyncHandler(async (req, res) => {
                 },
                 token
             }))
-    }
-    catch (error) {
-        return res.status(500).json(new apiError("Server Error.Please wait!", 500))
-    }
 })
 
 //Update User Profile Controller
@@ -95,7 +92,6 @@ const updateUserProfile = asyncHandler(async (req, res) => {
 
 //Get User Profile Controller
 const getUserProfile = asyncHandler(async (req, res) => {
-    try {
         const user = await User.findById(req.user._id)
         if (!user) {
             throw new apiError("User not found", 404)
@@ -103,11 +99,13 @@ const getUserProfile = asyncHandler(async (req, res) => {
         return res.status(200).json(
             new apiResponse("User profile fetched successfully", 200, user)
         )
-    }
-    catch (error) {
-        return res.status(500).json(new apiError("Server Error.Please wait!", 500))
-    }
+
 })
 
+//Logout user
 
-export { registerUser, getUserProfile, loginUser, updateUserProfile }
+const LogoutUser = asyncHandler( async(req, res)=> {
+    return res.status(200).json(new apiResponse("Logged out successfully", 200, null)
+)})
+
+export { registerUser, getUserProfile, loginUser, updateUserProfile, LogoutUser }
