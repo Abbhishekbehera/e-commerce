@@ -1,7 +1,16 @@
 import jwt from "jsonwebtoken";
 
 export const generateToken = (payload) => {
-    return jwt.sign(payload, process.env.JWT_SECRET, {
-        expiresIn: "7d"
-    })
+
+    if (!process.env.JWT_SECRET) {
+        throw new Error("JWT_SECRET is missing");
+    }
+
+    return jwt.sign(
+        payload,
+        process.env.JWT_SECRET,
+        {
+            expiresIn: "7d"
+        }
+    );
 };

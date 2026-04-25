@@ -15,6 +15,8 @@ const PORT = process.env.USER_SERVICE_PORT || 5001;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+app.use("/api/v1/", userRoutes);
+
 connectDb()
     .then(() => {
         app.listen(PORT, () => {
@@ -25,5 +27,3 @@ connectDb()
         console.error("Failed to connect to the database -> User Service", error);
     });
 
-
-app.use("/api/v1/", userRoutes);

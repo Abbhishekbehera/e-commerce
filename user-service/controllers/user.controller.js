@@ -7,6 +7,7 @@ import { apiResponse } from "../utils/apiResponse.js";
 import { uploadImageToCloudinary } from "../utils/fileUpload.js";
 import { generateToken } from "../utils/generatejwt.js"
 
+//Register Controller
 const registerUser = asyncHandler(async (req, res) => {
     try {
         const { name, email, password } = req.body
@@ -28,8 +29,8 @@ const registerUser = asyncHandler(async (req, res) => {
             profilePic: profile.url
         })
         const token = generateToken({ userId: newUser._id })
-        return res.status(200).json( new apiResponse("User created successfully.", 200, 
-            {user: newUser,token}))
+        return res.status(200).json(new apiResponse("User created successfully.", 200,
+            { user: newUser, token }))
     }
     catch (error) {
         return res.status(500).json(new apiError("Server Error.Please wait!", 500))
@@ -37,23 +38,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
 })
 
-
-const getUserProfile = asyncHandler(async (req, res) => {
-    try {
-        const userId = req.user?.userId   
-        if (!userId) {
-            throw new apiError("Unauthorized access", 401)
-        }
-        const user = await User.findById(userId).select("-password")
-        if (!user) {
-            throw new apiError("User not found", 404)
-        }
-        return res.status(200).json(
-            new apiResponse("User profile fetched successfully", 200, user)
-        )} catch (error) {
-        return res.status(500).json(new apiError("Server Error.Please wait!", 500))
-    }})
-
+//Login Controller
 const loginUser = asyncHandler(async (req, res) => {
     try {
         const { email, password } = req.body
@@ -66,48 +51,63 @@ const loginUser = asyncHandler(async (req, res) => {
         }
         const isMatch = await user.isPasswordCorrect(password)
         if (!isMatch) {
-            throw new apiError("Invalid credentials", 401)
+            throw new apiError("Incorrect Passsword.Try again!", 401)
         }
         const token = generateToken({ userId: user._id })
         return res.status(200).json(
             new apiResponse("Login successful", 200, {
                 user: {
-                    _id: user._id,
                     name: user.name,
                     email: user.email,
-                    profilePic: user.profilePic},
+                },
                 token
-            }))} catch (error) {
+            }))
+    }
+    catch (error) {
         return res.status(500).json(new apiError("Server Error.Please wait!", 500))
-    }})
+    }
+})
 
+//Update User Profile Controller
 const updateUserProfile = asyncHandler(async (req, res) => {
     try {
-        const userId = req.user?.userId
-        if (!userId) {
-            throw new apiError("Unauthorized access", 401)
+        const { name, email } = req.body
+        if ([name, email].some((f) => {
+            return f?.trim() === ""
+        })) {
+            throw new apiError("All fields are required", 400)
         }
-        const { name, email, password } = req.body
-        const user = await User.findById(userId)
+        const updateUser = await User.findByIdAndUpdate(req.user._id,
+            {
+                $set: {
+                    name: name,
+                    email: email
+                }
+            }, { new: true }
+        )
+        return res.status(200).json(new apiResponse("Updated successfully", 200, updateUser))
+
+    }
+    catch (error) {
+        return res.status(500).json(new apiError("Server Error.Please wait!", 500))
+    }
+})
+
+//Get User Profile Controller
+const getUserProfile = asyncHandler(async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id)
         if (!user) {
             throw new apiError("User not found", 404)
         }
-        if (name) user.name = name
-        if (email) user.email = email
-        if (password) user.password = password
-        const profilePicImage = req.files?.profilePic?.[0]?.path
-        if (profilePicImage) {
-            const profile = await uploadImageToCloudinary(profilePicImage)
-            user.profilePic = profile.url
-        }
-        await user.save()
         return res.status(200).json(
-            new apiResponse("Profile updated successfully", 200, user)
+            new apiResponse("User profile fetched successfully", 200, user)
         )
-    } catch (error) {
+    }
+    catch (error) {
         return res.status(500).json(new apiError("Server Error.Please wait!", 500))
-    }})
+    }
+})
 
 
-
-export {registerUser, getUserProfile, loginUser, updateUserProfile}
+export { registerUser, getUserProfile, loginUser, updateUserProfile }
