@@ -27,6 +27,7 @@ const registerUser = asyncHandler(async (req, res) => {
         if (profilePicImage) {
         profile = await uploadImageToCloudinary(profilePicImage);
         }
+        console.log("Cloudinary response:", profile);
         const newUser = await User.create({
             name,
             email,

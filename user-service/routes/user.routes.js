@@ -13,7 +13,12 @@ const userRouter = Router()
 userRouter.route("/user/login").post(loginUser)
 
 userRouter.route("/user/register").post(
-        upload.single("profilePic"),
+        upload.fields([
+        {
+            name: "profilePic",
+            maxCount: 1
+        }
+    ]),
         registerUser)
 
 userRouter.route("/user/profile").put(
