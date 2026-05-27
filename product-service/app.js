@@ -1,7 +1,7 @@
 import express from "express";
-import connectDb from "../user-service/config/db.js";
+import connectDb from "../product-service/config/db.js";
 import dotenv from "dotenv";
-import userRoutes from "./routes/user.routes.js";
+import productRouter from "../product-service/routes/product.routes.js";
 
 dotenv.config(
     {
@@ -10,7 +10,7 @@ dotenv.config(
 );
 
 const app = express();
-const PORT = process.env.USER_SERVICE_PORT || 5001;
+const PORT = process.env.PRODUCT_SERVICE_PORT || 5002;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -20,14 +20,14 @@ app.use(express.static('public'));
 connectDb()
     .then(() => {
         app.listen(PORT, () => {
-            console.log(`User Service is running on port http://localhost:${PORT}`);
+            console.log(`Product Service is running on port http://localhost:${PORT}`);
         });
     })
     .catch((error) => {
-        console.error("Failed to connect to the database -> User Service", error);
+        console.error("Failed to connect to the database -> Product Service", error);
     });
 
-app.use("/api/v1/user", userRoutes);
+app.use("/api/v1/products", productRouter);
 
 app.use((err, req, res, next) => {
     console.error(err);
