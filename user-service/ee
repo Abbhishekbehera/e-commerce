@@ -1,8 +1,0 @@
-USER_SERVICE_PORT=8000
-MONGO_URI=mongodb://localhost:27017/e-commerce
-JWT_SECRET=na_than_da_leo
-ACCESS_TOKEN_SECRET= na_than_da_leo_access_token
-REFRESH_TOKEN_SECRET=na_than_da_leo_refresh_token
-CLOUDINARY_NAME=abbhishek-cloudinary
-CLOUDINARY_KEY=862362351558687
-CLOUDINARY_SECRET=7FBlYNRaA_tl-XSQuyRbqyOmQW4
