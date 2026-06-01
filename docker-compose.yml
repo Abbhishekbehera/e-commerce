@@ -33,5 +33,27 @@ services:
       depends_on:
       - mongo
 
+    notification-service:
+      build: ./notification-service
+      container_name: notification-service
+      ports:
+      - "5004:5004"
+
+    payment-service:
+      build: ./payment-service
+      container_name: payment-service
+      ports:
+      - "5005:5005"
+      depends_on:
+      - mongo
+
+    cart-service:
+      build: ./cart-service
+      container_name: cart-service
+      ports:
+      - "5006:5006"
+      depends_on:
+      - mongo
+
 volumes:
   mongo_data

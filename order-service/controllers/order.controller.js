@@ -8,35 +8,36 @@ import { apiError } from "../utils/apiError.js";
 
 //Order Place Controller
 const placeOrder = asyncHandler(async (req, res) => {
-    const { userId } = req.params;
-    const { items } = req.body;
-
+    const { userId, items } = req.body;
+    const { productId, quantity } = req.body;
+    if (!userId) {
+    throw new apiError(400, "User ID is required");
+}
     if (!items || items.length === 0) {
         throw new apiError(400, "Items are required");
     }
 
     // 1. Fetch products
-    const { data: products } = await axios.post(
-        `${process.env.PRODUCT_SERVICE_URI}/api/v1/products/bulk`,
-        { productIds: items.map((i) => i.productId) }
-    );
+    const response = await axios.post(`${process.env.PRODUCT_SERVICE_URL}/bulk`,
+    { productIds: items.map(i => i.productId) } );
+        const products = response.data;
 
     // 2. Build order items
     const orderItems = products.map((product) => {
-        const reqItem = items.find((i) => i.productId === product._id);
+        const reqItem = items.find((i) => i.productId === product._id.toString());
 
         if (!reqItem) {
             throw new apiError(400, "Invalid product");
         }
 
         if (product.stock < reqItem.quantity) {
-            throw new apiError(400, `${product.name} out of stock`);
+            throw new apiError(400, `${product.productName} out of stock`);
         }
 
         return {
-            productId: product._id,
-            name: product.name,
-            price: product.price,
+            productId: product._id.toString(),
+            name: product.productName,
+            price: product.productPrice,
             quantity: reqItem.quantity,
         };
     });
@@ -47,7 +48,7 @@ const placeOrder = asyncHandler(async (req, res) => {
     );
 
     // 🔥 3. Atomic stock deduction
-    await axios.post(`${process.env.PRODUCT_SERVICE_URI}/api/v1/products/bulk-deduct`, {
+    await axios.post(`${process.env.PRODUCT_SERVICE_URL}/bulk-deduct`, {
         items: orderItems,
     });
 
@@ -59,7 +60,7 @@ const placeOrder = asyncHandler(async (req, res) => {
         status: "pending",
     });
 
-    res.status(201).json(new apiResponse(201, order));
+    res.status(201).json(new apiResponse("Order placed successfully", 201, order));
 });
 
 //Get User Orders Controller
@@ -80,7 +81,7 @@ const getOrderById = asyncHandler(async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(id)) {
         throw new apiError(400, "Invalid order ID");
     }
-    const order = await Order.findById({ _id: id, userId: userId });
+    const order = await Order.findOne({ _id: id, userId});
     if (!order) {
         throw new apiError(404, "Order not found");
     }
@@ -104,9 +105,22 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
     return res.status(200).json(new apiResponse(200, order));
 });
 
+// cancel order
+const cancelOrder = asyncHandler(async (req,res)=>{
+    const {id} = req.params;
+    if(!mongoose.Types.ObjectId.isValid(id)) {
+        throw new apiError(400, "Invalid order ID");
+    }
+    const order = await Order.findByIdAndDelete(id);
+    if (!order) {
+        throw new apiError(404, "Order not found");
+    }
+    return res.status(200).json(new apiResponse(200, order));
+});
 export {
     placeOrder,
     getUserOrders,
     getOrderById,
-    updateOrderStatus
+    updateOrderStatus,
+    cancelOrder
 };

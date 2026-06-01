@@ -1,17 +1,19 @@
 import express from "express";
 import connectDb from "../product-service/config/db.js";
 import dotenv from "dotenv";
+import cors from "cors";
 import productRouter from "../product-service/routes/product.routes.js";
 
 dotenv.config(
     {
-        quiet: true,
+        path: "../.env",
     }
 );
 
 const app = express();
 const PORT = process.env.PRODUCT_SERVICE_PORT || 5002;
 
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));

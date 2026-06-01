@@ -17,8 +17,11 @@ const verifyJWT = async (req, res, next) => {
         next()
     }
     catch (error) {
-        return res.status(401).json(new apiError("Invalid or expired token", 401))
-    }
+    return res.status(401).json({
+        success: false,
+        message: error.message
+    });
 }
 
-export default verifyJWT
+}
+export default verifyJWT;

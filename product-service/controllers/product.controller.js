@@ -14,7 +14,7 @@ const createProduct = asyncHandler(async (req, res) => {
         productCategory,
         stock } = req.body;
     if ([productName, productDescription, productPrice, productCategory, stock].some((f) => {
-        return f?.trim() === ""
+        return String(f)?.trim() === ""
     })) {
         throw new apiError("All fields are required in order to create a product.", 400)
     }
@@ -166,7 +166,7 @@ const updateProduct = asyncHandler(async (req, res) => {
         productPrice,
         productCategory } = req.body;
     if ([productName, productDescription, productPrice, productCategory].some((f) => {
-        return f?.trim() === ""
+        return String(f)?.trim() === ""
     })) {
         throw new apiError("All fields are required in order to update a product.", 400)
     }
@@ -198,6 +198,8 @@ const deleteProduct = asyncHandler(async (req, res) => {
 export {
     createProduct,
     getAllProducts,
+    bulkDeductStock,
+    getBulkProducts,
     getSingleProduct,
     getAllProductsByCategory,
     updateProduct,
