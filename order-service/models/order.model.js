@@ -24,6 +24,16 @@ const orderSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    userEmail: {
+        type: String,
+        required: true,
+        trim: true
+    },
+    userPhoneNumber: {
+        type: String,
+        trim: true,
+        default: ""
+    },
     items: [orderItemSchema],
     totalAmount: {
         type: Number,

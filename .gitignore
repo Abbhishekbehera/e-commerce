@@ -111,6 +111,9 @@ temp/
 ehthumbs.db
 Thumbs.db
 
+#temporary files
+*.tmp
+
 # IDE files
 .vscode/
 .idea/
@@ -121,3 +124,10 @@ Thumbs.db
 # E-commerce specific
 uploads/
 sessions/
+
+
+#docker
+docker-data/
+mongo_data/
+redis_data/
+rabbitmq_data/

@@ -3,12 +3,17 @@ import Payment from "../models/payment.model.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { apiError } from "../utils/apiError.js";
 import { apiResponse } from "../utils/apiResponse.js";
+import { publishPaymentCompletedEvent } from "../../shared/utils/eventPublisher.js";
+import logger from "../../shared/utils/logger.js";
+
 const getStripeClient = () => {
     return new Stripe(process.env.STRIPE_SECRET_KEY);
 };
+
 // Create payment intent
 const createPaymentIntent = asyncHandler(async (req, res) => {
-    const { orderId, amount, userId } = req.body;
+    const { orderId, amount, userId, userEmail, userPhoneNumber } = req.body;
+
     if (!orderId || !amount || !userId) {
         throw new apiError("Order ID, amount, and user ID are required", 400);
     }
@@ -16,11 +21,11 @@ const createPaymentIntent = asyncHandler(async (req, res) => {
     if (amount < 1) {
         throw new apiError("Amount must be at least $1", 400);
     }
+
     try {
-        // Create Stripe payment intent
         const stripeClient = getStripeClient();
         const paymentIntent = await stripeClient.paymentIntents.create({
-            amount: Math.round(amount * 100), // Stripe expects amount in cents
+            amount: Math.round(amount * 100),
             currency: "usd",
             metadata: {
                 orderId,
@@ -28,10 +33,11 @@ const createPaymentIntent = asyncHandler(async (req, res) => {
             }
         });
 
-        // Save payment record to database
         const payment = await Payment.create({
             orderId,
             userId,
+            userEmail: userEmail || "",
+            userPhoneNumber: userPhoneNumber || "",
             amount,
             currency: "usd",
             paymentMethod: "stripe",
@@ -52,17 +58,16 @@ const createPaymentIntent = asyncHandler(async (req, res) => {
 
 // Confirm payment
 const confirmPayment = asyncHandler(async (req, res) => {
-    const { paymentIntentId } = req.body;
+    const { paymentIntentId, userEmail, userPhoneNumber } = req.body;
 
     if (!paymentIntentId) {
         throw new apiError("Payment Intent ID is required", 400);
     }
 
     try {
-        // Retrieve payment intent from Stripe
         const paymentIntent = await getStripeClient().paymentIntents.retrieve(paymentIntentId);
 
-        let payment = await Payment.findOne({ stripePaymentIntentId: paymentIntentId });
+        const payment = await Payment.findOne({ stripePaymentIntentId: paymentIntentId });
 
         if (!payment) {
             throw new apiError("Payment record not found", 404);
@@ -71,14 +76,33 @@ const confirmPayment = asyncHandler(async (req, res) => {
         if (paymentIntent.status === "succeeded") {
             payment.status = "completed";
             payment.transactionId = paymentIntent.id;
+
+            if (userEmail) payment.userEmail = userEmail;
+            if (userPhoneNumber) payment.userPhoneNumber = userPhoneNumber;
+
+            await payment.save();
+
+            publishPaymentCompletedEvent({
+                transactionId: payment.transactionId,
+                orderId: payment.orderId,
+                userId: payment.userId,
+                userEmail: payment.userEmail,
+                userPhoneNumber: payment.userPhoneNumber,
+                amount: payment.amount,
+                paymentMethod: payment.paymentMethod
+            }).catch((error) => {
+                logger.error("Failed to publish PaymentCompleted event:", error.message);
+            });
         } else if (paymentIntent.status === "requires_payment_method") {
             payment.status = "pending";
+            await payment.save();
         } else if (paymentIntent.status === "canceled") {
             payment.status = "failed";
             payment.errorMessage = "Payment was canceled";
+            await payment.save();
+        } else {
+            await payment.save();
         }
-
-        await payment.save();
 
         return res.status(200).json(
             new apiResponse("Payment confirmed successfully", 200, payment)
@@ -130,7 +154,7 @@ const refundPayment = asyncHandler(async (req, res) => {
         throw new apiError("Order ID is required", 400);
     }
 
-    let payment = await Payment.findOne({ orderId });
+    const payment = await Payment.findOne({ orderId });
 
     if (!payment) {
         throw new apiError("Payment not found", 404);
@@ -141,7 +165,7 @@ const refundPayment = asyncHandler(async (req, res) => {
     }
 
     try {
-        // Create refund in Stripe
+        const stripeClient = getStripeClient();
         const refund = await stripeClient.refunds.create({
             payment_intent: payment.stripePaymentIntentId,
             amount: refundAmount ? Math.round(refundAmount * 100) : undefined
@@ -167,4 +191,4 @@ export {
     getPaymentStatus,
     getUserPayments,
     refundPayment
-}
+};

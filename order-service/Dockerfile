@@ -1,13 +1,20 @@
-FROM node:29.4.1
+FROM node:20-alpine
 
 WORKDIR /app
 
+# Shared module
+
 COPY package*.json ./
+RUN npm install --omit=dev
 
-RUN npm install
+COPY shared ./shared
 
-COPY . .
+# Order Service
 
-EXPOSE 5002
+COPY order-service ./order-service
 
-CMD [ "nodemon","app.js" ]
+WORKDIR /app/order-service
+
+EXPOSE 5003
+
+CMD ["node", "app.js"]

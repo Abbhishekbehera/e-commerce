@@ -11,16 +11,21 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
+  "description": "User authentication and profile management service",
   "dependencies": {
+    "amqplib": "^0.10.4",
     "argon2": "^0.44.0",
     "cloudinary": "^2.9.0",
     "cors": "^2.8.5",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "express-validator": "^7.2.1",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.5.0",
-    "multer": "^2.1.1"
+    "multer": "^2.1.1",
+    "nodemailer": "^6.9.13",
+    "redis": "^4.6.13",
+    "winston": "^3.17.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"

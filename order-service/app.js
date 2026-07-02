@@ -3,13 +3,10 @@ import connectDb from "../order-service/config/db.js";
 import dotenv from "dotenv";
 import cors from "cors";
 import orderRouter from "../order-service/routes/order.routes.js";
+import rabbitmqService from "../shared/utils/rabbitmq.js";
+import logger from "../shared/utils/logger.js";
 
-
-dotenv.config(
-    {
-        path: "../.env",
-    }
-);
+dotenv.config({ path: "../.env" });
 
 const app = express();
 const PORT = process.env.ORDER_SERVICE_PORT || 5003;
@@ -17,23 +14,33 @@ const PORT = process.env.ORDER_SERVICE_PORT || 5003;
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static('public'));
+app.use(express.static("public"));
 
+const initializeServices = async () => {
+    try {
+        await connectDb();
+        logger.info("Order Service: Connected to MongoDB");
 
-connectDb()
-    .then(() => {
+        await rabbitmqService.connect();
+        logger.info("Order Service: Connected to RabbitMQ");
+
         app.listen(PORT, () => {
-            console.log(`Order Service is running on port http://localhost:${PORT}`);
+            logger.info(`Order Service is running on port http://localhost:${PORT}`);
         });
-    })
-    .catch((error) => {
-        console.error("Failed to connect to the database -> Order Service", error);
-    });
+    } catch (error) {
+        logger.error("Failed to initialize Order Service:", error.message);
+        process.exit(1);
+    }
+};
 
-app.use("/api/v1/Order", orderRouter);
+app.use("/api/v1/orders", orderRouter);
+
+app.get("/health", (req, res) => {
+    res.status(200).json({ status: "ok", service: "order-service" });
+});
 
 app.use((err, req, res, next) => {
-    console.error(err);
+    logger.error(err);
 
     res.status(err.statusCode || 500).json({
         success: false,
@@ -41,3 +48,13 @@ app.use((err, req, res, next) => {
         errors: err.errors || []
     });
 });
+
+process.on("SIGTERM", async () => {
+    logger.info("SIGTERM signal received: closing Order Service");
+    await rabbitmqService.close();
+    process.exit(0);
+});
+
+initializeServices();
+
+export default app;

@@ -1,13 +1,18 @@
-FROM node:18-alpine
+FROM node:20-alpine
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
+COPY package*.json ./
+RUN npm install --omit=dev
+# Shared module
+COPY shared ./shared
 
-RUN npm install
 
-COPY . .
+# Cart Service
+COPY cart-service ./cart-service
+
+WORKDIR /app/cart-service
 
 EXPOSE 5006
 
-CMD ["node", "app.js"]
+CMD ["node", "app.js"] 

@@ -3,6 +3,8 @@ import connectDb from "../user-service/config/db.js";
 import dotenv from "dotenv";
 import cors from "cors";
 import userRoutes from "./routes/user.routes.js";
+import rabbitmqService from "../shared/utils/rabbitmq.js";
+import logger from "../shared/utils/logger.js";
 
 dotenv.config(
     {
@@ -18,24 +20,54 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
-connectDb()
-    .then(() => {
+// Initialize services
+const initializeServices = async () => {
+    try {
+        // Connect to MongoDB
+        await connectDb();
+        logger.info('User Service: Connected to MongoDB');
+
+        // Connect to RabbitMQ
+        await rabbitmqService.connect();
+        logger.info('User Service: Connected to RabbitMQ');
+
         app.listen(PORT, () => {
-            console.log(`User Service is running on port http://localhost:${PORT}`);
+            logger.info(`User Service is running on port http://localhost:${PORT}`);
         });
-    })
-    .catch((error) => {
-        console.error("Failed to connect to the database -> User Service", error);
-    });
+    } catch (error) {
+        logger.error("Failed to initialize User Service:", error.message);
+        process.exit(1);
+    }
+};
 
 app.use("/api/v1/user", userRoutes);
 
-app.use((err, req, res, next) => {
-    console.error(err);
+app.get("/health", (req, res) => {
+    res.status(200).json({ status: "ok", service: "user-service" });
+});
 
-    res.status(err.statuscode || 500).json({
+app.use((err, req, res, next) => {
+    logger.error(err);
+
+    res.status(err.statusCode || 500).json({
         success: false,
         message: err.message,
         errors: err.errors || []
     });
 });
+
+// Graceful shutdown
+process.on('SIGTERM', async () => {
+    logger.info('SIGTERM signal received: closing HTTP server');
+    await rabbitmqService.close();
+    process.exit(0);
+});
+
+initializeServices();
+
+export default app;
+
+
+
+
+

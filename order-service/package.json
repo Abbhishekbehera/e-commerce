@@ -11,15 +11,17 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
+  "description": "Order management service",
   "dependencies": {
+    "amqplib": "^0.10.4",
     "axios": "^1.15.2",
-    "cloudinary": "^2.10.0",
     "cors": "^2.8.5",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "express-validator": "^7.2.1",
     "mongoose": "^9.6.1",
-    "multer": "^2.1.1"
+    "redis": "^4.6.13",
+    "winston": "^3.17.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"

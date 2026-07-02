@@ -1,12 +1,18 @@
-FROM node:18-alpine
+FROM node:20-alpine
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
+# Shared module
 
-RUN npm install
+COPY package*.json ./
+RUN npm install --omit=dev
 
-COPY . .
+COPY shared ./shared
+
+# Payment Service
+COPY payment-service ./payment-service
+
+WORKDIR /app/payment-service
 
 EXPOSE 5005
 

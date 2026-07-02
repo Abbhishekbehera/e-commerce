@@ -5,6 +5,12 @@ import asyncHandler from "../utils/asyncHandler.js";
 import { apiResponse } from "../utils/apiResponse.js";
 import { apiError } from "../utils/apiError.js";
 import { uploadImageToCloudinary } from "../utils/fileUpload.js";
+import redisService from "../../shared/utils/redis.js";
+import {
+    setCacheResponse,
+    invalidateProductCache,
+    invalidateAllProductCache
+} from "../middlewares/cache.middleware.js";
 
 //Create Product Controller
 const createProduct = asyncHandler(async (req, res) => {
@@ -31,6 +37,10 @@ const createProduct = asyncHandler(async (req, res) => {
         stock,
         productImage: productImage.url
     })
+    
+    // Invalidate cache
+    await invalidateAllProductCache();
+    
     return res.status(201).json(new apiResponse("Product created successfully.", 201, newProduct))
 })
 
@@ -50,7 +60,8 @@ const getAllProducts = asyncHandler(async (req, res) => {
     const products = await Product.find().sort({ _id: -1 }).skip(skip).limit(limit);
     const totalProducts = await Product.countDocuments();
     const totalPages = Math.ceil(totalProducts / limit);
-    return res.status(200).json(new apiResponse("Products retrieved successfully.", 200, {
+    
+    const responseData = new apiResponse("Products retrieved successfully.", 200, {
         products,
         pagination: {
             totalProducts,
@@ -58,7 +69,14 @@ const getAllProducts = asyncHandler(async (req, res) => {
             currentPage: page,
             pageSize: limit
         }
-    }))
+    });
+    
+    // Set cache if cache key exists
+    if (req.cacheKey) {
+        setCacheResponse(responseData, req.cacheKey, 3600);
+    }
+    
+    return res.status(200).json(responseData);
 })
 
 //Bulk Products Controller
@@ -102,6 +120,9 @@ const bulkDeductStock = asyncHandler(async (req, res) => {
             { $inc: { stock: -item.quantity } },
             { new: true }
         );
+        
+        // Invalidate product cache
+        await invalidateProductCache(item.productId);
     }
 
     res.status(200).json({ message: "Stock deducted successfully" });
@@ -109,24 +130,30 @@ const bulkDeductStock = asyncHandler(async (req, res) => {
 
 //Get All Products By Category Controller
 const getAllProductsByCategory = asyncHandler(async (req, res) => {
-    let { productCategory, page = 1, limit = 10 } = req.query;
-    if (!productCategory) {
-        throw new apiError("Product category is required to filter products.", 400)
+    const { category } = req.params;
+    let { page = 1, limit = 10 } = req.query;
+
+    if (!category) {
+        throw new apiError("Product category is required to filter products.", 400);
     }
+
     page = parseInt(page);
     limit = parseInt(limit);
-    if (page < 1) {
-        page = 1;
-    }
-    let max_limit = 100;
-    if (limit > max_limit) {
-        limit = max_limit;
-    }
-    let skip = (page - 1) * limit;
-    const products = await Product.find({ productCategory }).sort({ _id: -1 }).skip(skip).limit(limit);
-    const totalProducts = await Product.countDocuments({ productCategory });
+    if (page < 1) page = 1;
+
+    const maxLimit = 100;
+    if (limit > maxLimit) limit = maxLimit;
+
+    const skip = (page - 1) * limit;
+    const products = await Product.find({ productCategory: category })
+        .sort({ _id: -1 })
+        .skip(skip)
+        .limit(limit);
+    const totalProducts = await Product.countDocuments({ productCategory: category });
     const totalPages = Math.ceil(totalProducts / limit);
-    return res.status(200).json(new apiResponse("Products retrieved successfully according to category.", 200, {
+
+    const responseData = new apiResponse("Products retrieved successfully according to category.", 200, {
+        category,
         products,
         pagination: {
             totalProducts,
@@ -134,8 +161,42 @@ const getAllProductsByCategory = asyncHandler(async (req, res) => {
             currentPage: page,
             pageSize: limit
         }
-    }))
-})
+    });
+
+    if (req.cacheKey) {
+        setCacheResponse(responseData, req.cacheKey, 3600);
+    }
+
+    return res.status(200).json(responseData);
+});
+
+// Get all distinct categories
+const getCategories = asyncHandler(async (req, res) => {
+    const categories = await Product.distinct("productCategory");
+
+    const responseData = new apiResponse("Categories retrieved successfully.", 200, categories);
+
+    if (req.cacheKey) {
+        setCacheResponse(responseData, req.cacheKey, 7200);
+    }
+
+    return res.status(200).json(responseData);
+});
+
+// Get frequently accessed / featured products
+const getFeaturedProducts = asyncHandler(async (req, res) => {
+    const products = await Product.find()
+        .sort({ updatedAt: -1 })
+        .limit(10);
+
+    const responseData = new apiResponse("Featured products retrieved successfully.", 200, products);
+
+    if (req.cacheKey) {
+        setCacheResponse(responseData, req.cacheKey, 1800);
+    }
+
+    return res.status(200).json(responseData);
+});
 
 //Get Single Product Controller
 const getSingleProduct = asyncHandler(async (req, res) => {
@@ -147,7 +208,15 @@ const getSingleProduct = asyncHandler(async (req, res) => {
     if (!product) {
         throw new apiError("Product not found with the given id.", 404)
     }
-    return res.status(200).json(new apiResponse("Product retrieved successfully.", 200, product))
+    
+    const responseData = new apiResponse("Product retrieved successfully.", 200, product);
+    
+    // Set cache if cache key exists
+    if (req.cacheKey) {
+        setCacheResponse(responseData, req.cacheKey, 3600);
+    }
+    
+    return res.status(200).json(responseData);
 })
 
 
@@ -178,6 +247,10 @@ const updateProduct = asyncHandler(async (req, res) => {
             productCategory
         }
     }, { new: true })
+    
+    // Invalidate cache for this product and all product lists
+    await invalidateProductCache(id);
+    
     return res.status(200).json(new apiResponse("Product details updated successfully.", 200, updatedPorduct))
 })
 
@@ -192,6 +265,10 @@ const deleteProduct = asyncHandler(async (req, res) => {
         throw new apiError("Product not found with the given id.", 404)
     }
     const deletedProduct = await Product.findByIdAndDelete(id);
+    
+    // Invalidate cache for this product and all product lists
+    await invalidateProductCache(id);
+    
     return res.status(200).json(new apiResponse("Product deleted successfully.", 200, deletedProduct))
 })
 
@@ -202,6 +279,8 @@ export {
     getBulkProducts,
     getSingleProduct,
     getAllProductsByCategory,
+    getCategories,
+    getFeaturedProducts,
     updateProduct,
     deleteProduct
 }

@@ -1,13 +1,18 @@
-FROM node:29.4.1
+FROM node:20-alpine
 
 WORKDIR /app
 
+# Shared module
 COPY package*.json ./
+RUN npm install --omit=dev
 
-RUN npm install
+COPY shared ./shared
+# User Service
 
-COPY . .
+COPY user-service ./user-service
+
+WORKDIR /app/user-service
 
 EXPOSE 5001
 
-CMD [ "nodemon","app.js" ]
+CMD ["node", "app.js"]

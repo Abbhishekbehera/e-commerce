@@ -25,10 +25,10 @@ const addToCart = asyncHandler(async (req, res) => {
         throw new apiError("Quantity must be at least 1", 400);
     }
     // Fetch product details
-    const productServiceUrl = process.env.PRODUCT_SERVICE_URL;
+    const productServiceUrl = process.env.PRODUCT_SERVICE_URL || "http://localhost:5002";
     let product;
     try {
-        const response = await axios.get(`${productServiceUrl}/product/${productId}`);
+        const response = await axios.get(`${productServiceUrl}/api/v1/products/product/${productId}`);
         product = response.data.data;
     } catch (error) {
         throw new apiError("Product not found or Product Service unavailable", 404);

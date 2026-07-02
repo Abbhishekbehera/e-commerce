@@ -24,6 +24,19 @@ const userSchema = new mongoose.Schema({
     profilePic: {
         type: String,
         default: ""
+    },
+    phoneNumber: {
+        type: String,
+        trim: true,
+        default: ""
+    },
+    resetPasswordToken: {
+        type: String,
+        select: false
+    },
+    resetPasswordExpires: {
+        type: Date,
+        select: false
     }
 })
 
@@ -32,6 +45,7 @@ userSchema.pre("save", async function () {
         return
     }
     this.password = await argon2.hash(this.password)
+    next();
 })
 
 userSchema.methods.isPasswordCorrect = async function (password) {

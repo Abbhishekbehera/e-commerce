@@ -13,5 +13,5 @@ orderRouter.route("/order").post(placeOrder);
 orderRouter.route("/orders/:userId").get(getUserOrders);
 orderRouter.route("/order/:userId/:id").get(getOrderById);
 orderRouter.route("/order/:id/status").put(updateOrderStatus);
-orderRouter.route("/order/:id").delete(cancelOrder);
+orderRouter.route("/order/:id/cancel").put(cancelOrder);
 export default orderRouter;

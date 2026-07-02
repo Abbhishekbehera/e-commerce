@@ -10,6 +10,14 @@ const paymentSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    userEmail: {
+        type: String,
+        default: ""
+    },
+    userPhoneNumber: {
+        type: String,
+        default: ""
+    },
     amount: {
         type: Number,
         required: true

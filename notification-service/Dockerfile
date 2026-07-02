@@ -1,12 +1,18 @@
-FROM node:18-alpine
+FROM node:20-alpine
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
+# Shared module
+COPY package*.json ./
+RUN npm install --omit=dev
 
-RUN npm install
+COPY shared ./shared
 
-COPY . .
+# Notification Service
+COPY notification-service ./notification-service
+
+WORKDIR /app/notification-service
+
 
 EXPOSE 5004
 

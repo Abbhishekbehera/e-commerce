@@ -1,10 +1,16 @@
 {
-  "dependencies": {
-    "argon2": "^0.44.0",
-    "dotenv": "^17.4.2",
-    "express": "^5.2.1",
-    "install": "^0.13.0",
-    "jsonwebtoken": "^9.0.3",
-    "mongoose": "^9.5.0"
-  }
+    "type":"module",
+    "dependencies":{
+        "amqplib":"^2.0.1",
+        "argon2":"^0.44.0",
+        "dotenv":"^17.4.2",
+        "express":"^5.2.1",
+        "install":"^0.13.0",
+        "jsonwebtoken":"^9.0.3",
+        "mongoose":"^9.5.0",
+        "nodemailer":"^6.10.1",
+        "axios": "^1.15.2",
+        "redis":"^6.0.0",
+        "twilio":"^5.13.1",
+        "winston":"^3.17.0"}
 }
